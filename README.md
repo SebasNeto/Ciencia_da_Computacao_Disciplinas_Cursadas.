@@ -1,3 +1,2 @@
-# Ciencia_da_Computacao_Python
-# Linguagem Python
-# Códigos criados durante a disciplina de Introdução a Computação/Universidade Federal do Amazonas/UFAM;
+# Linguagens de Programação;
+# Repositório destinado aos trabalhos realizados no curso de Ciência da Computação/Universidade Federal do Amazonas/UFAM;
