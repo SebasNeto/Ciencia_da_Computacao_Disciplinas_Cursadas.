@@ -1,0 +1,292 @@
+/*
+    Documentação do código:
+
+
+    Qual seria a lógica de implementação dessa atividade?
+    Em sala de aula os assuntos abordados consistiram em realizar comandos em uma lista encadeada como: remover, inserir, imprimir...
+    Dessa forma:
+    A maneira de pensar seria: criar uma lista encadeada de eventos, como explica na atividade, cada evento é representado por um nó contendo os dados do evento.
+    Uma maneira de trabalhar com a lista é por meio de função que irá ficar responsável pelos comandos: R,I,A,B,P e F.
+    como é um programa que exije muita atenção, consequentemente hÁVERA muitos erros. Utilize muitos printfs para entender e localizar o erro.
+
+    Obs: criar o nó da lista...
+
+    No caso do comando R, sem dúvidas será necessário percorrer a lsita para poder remover determinado evento. Nesse caso poderiamos fazer comparações de data e hora com aqueles dados que foram armazenados na lista e dessa forma remove-lós.
+
+    No caso do comando I, sem dúvidas devemos percorrer a lista para imprimir os dados que ocorrem no intervalo que deve ser especificado.
+
+    No caso do comando A, devemos novamente percorrer a lista para poder retornar o nó que será pedido.
+
+    No caso do comando B, a mesma lógica do comando anterior tendo em conta o formaro dia/mes/ano hora:min.
+
+    No caso do comando P, devemos percorrer a lista a fim de remover todos os nós do intervalo que será dado.
+
+    Os códigos que estão no gitHub serão fundamentais para ter uma noção do que fazer...
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//definição dos dados do evento
+typedef struct {
+    int seq;
+    int dia;
+    int mes;
+    int ano;
+    int hora;
+    int minuto;
+    int radiacao_solar;
+    double temperatura;
+    double umidade_relativa;
+} temperatura;
+
+typedef struct {
+    int seq;
+    int dia;
+    int mes;
+    int ano;
+    int hora;
+    int minuto;
+    double velocidade_media;
+    double velocidade_instantanea;
+    int direcao;
+} massas_de_ar;
+
+typedef struct node {
+    int tipo_sensor;
+    union {
+        temperatura temp;
+        massas_de_ar massa;
+    } dados;
+    struct node* prox;
+} node;
+
+
+//argumentos das funções
+node* criar_no(int tipo_sensor);
+void adicionar_no(node** head, node* novo_no);
+void remover_no(node** head, int dia, int mes, int ano, int hora, int minuto);
+void imprimir_intervalo(node* head, int x, int y);
+void ler_arquivo(node** head, int tipo_sensor, char* nome_arquivo);
+void liberar_lista(node* head);
+void acessar_elemento(node* head, int x);
+void buscar_evento(node* head, int dia, int mes, int ano, int hora, int minuto);
+void podar_intervalo(node** head, int x, int y);
+
+int main(int argc, char *argv[]) {
+   
+    int tipo_sensor = atoi(argv[1]);
+    char *nome_arquivo = argv[2];
+
+    int dia, hora, minuto, mes, ano;
+    int x, y;
+
+    node *head = NULL;
+
+    ler_arquivo(&head, tipo_sensor, nome_arquivo);
+    
+    char comando[50];
+    while (1) {
+        printf("Digite um comando: ");
+        fgets(comando, sizeof(comando), stdin);
+
+        if (comando[0] == 'F'){
+            break;
+        } else if (comando[0] == 'R') {
+            sscanf(comando + 1, "%d/%d/%d %d:%d", &dia, &mes, &ano, &hora, &minuto);
+            remover_no(&head, dia, mes, ano, hora, minuto);
+            
+        } else if (comando[0] == 'I') {
+            sscanf(comando + 1, "%d %d", &x, &y);
+            imprimir_intervalo(head, x, y);
+            
+        }else if(comando[0] == 'A'){
+            sscanf(comando + 1, "%d", &x);
+            acessar_elemento(head, x);
+        } else if(comando[0] == 'B'){
+            sscanf(comando + 1, "%d/%d/%d %d:%d", &dia, &mes, &ano, &hora, &minuto);
+            buscar_evento(head, dia, mes, ano, hora, minuto);
+        }else if(comando[0] == 'P'){
+            sscanf(comando + 1, "%d %d", &x, &y);
+            podar_intervalo(&head, x, y);
+        }else {
+            printf("Comando inválido. Tente novamente.\n");
+        }
+    }
+
+    liberar_lista(head);
+
+    return 0;
+}
+
+// Implementação das funções
+
+//função que ler o arquivo
+void ler_arquivo(node** head, int tipo_sensor, char* nome_arquivo) {
+    FILE* arquivo = fopen(nome_arquivo, "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo: %s\n", nome_arquivo);
+        return;
+    }
+
+    char linha[256];
+    while (fgets(linha, sizeof(linha), arquivo)) {
+        node* novo_no = criar_no(tipo_sensor);
+        int itens = 0;
+
+        char data_str[11];
+        char hora_str[6];
+
+        if (tipo_sensor == 1) {
+            itens = sscanf(linha, "%d %10s %5s %d %lf %lf", &novo_no->dados.temp.seq, data_str, hora_str, &novo_no->dados.temp.radiacao_solar, &novo_no->dados.temp.temperatura, &novo_no->dados.temp.umidade_relativa);
+
+            sscanf(data_str, "%d/%d/%d", &novo_no->dados.temp.dia, &novo_no->dados.temp.mes, &novo_no->dados.temp.ano);
+            sscanf(hora_str, "%d:%d", &novo_no->dados.temp.hora, &novo_no->dados.temp.minuto);
+
+        } else if (tipo_sensor == 2) {
+            itens = sscanf(linha, "%d %10s %5s %lf %lf %d", &novo_no->dados.massa.seq, data_str, hora_str, &novo_no->dados.massa.velocidade_media, &novo_no->dados.massa.velocidade_instantanea, &novo_no->dados.massa.direcao);
+
+            sscanf(data_str, "%d/%d/%d", &novo_no->dados.massa.dia, &novo_no->dados.massa.mes, &novo_no->dados.massa.ano);
+            sscanf(hora_str, "%d:%d", &novo_no->dados.massa.hora, &novo_no->dados.massa.minuto);
+        }
+
+        if (itens != (tipo_sensor == 1 ? 6 : 6)) {
+            free(novo_no);
+            continue;
+        }
+
+        adicionar_no(head, novo_no);
+    }
+
+    fclose(arquivo);
+}
+
+//criar nó
+node* criar_no(int tipo_sensor) {
+    node* novo_no = (node*)malloc(sizeof(node));
+    novo_no->tipo_sensor = tipo_sensor;
+    novo_no->prox = NULL;
+    return novo_no;
+}
+
+//função que adiciona nó
+void adicionar_no(node** head, node* novo_no) {
+    if (*head == NULL) {
+        *head = novo_no;
+    } else {
+        node* temp = *head;
+        while (temp->prox != NULL) {
+            temp = temp->prox;
+        }
+        temp->prox = novo_no;
+    }
+}
+
+//função que acessa o elemento
+void acessar_elemento(node* head, int x) {
+    node* temp = head;
+    int contador = 1;
+
+    while (temp != NULL) {
+        if (contador == x) {
+            printf("%d %02d/%02d/%04d %02d:%02d %d %.2lf %.2lf\n", temp->dados.temp.seq, temp->dados.temp.dia, temp->dados.temp.mes, temp->dados.temp.ano, temp->dados.temp.hora, temp->dados.temp.minuto, temp->dados.temp.radiacao_solar, temp->dados.temp.temperatura, temp->dados.temp.umidade_relativa);
+            return;
+        }
+        contador++;
+        temp = temp->prox;
+    }
+
+    printf("Índice inválido.\n");
+}
+
+
+//função que busca evento no nó
+void buscar_evento(node* head, int dia, int mes, int ano, int hora, int minuto) {
+    node* temp = head;
+
+    while (temp != NULL) {
+        if (temp->dados.temp.dia == dia && temp->dados.temp.mes == mes && temp->dados.temp.ano == ano && temp->dados.temp.hora == hora && temp->dados.temp.minuto == minuto) {
+            printf("%d %02d/%02d/%04d %02d:%02d %d %.2lf %.2lf\n", temp->dados.temp.seq, temp->dados.temp.dia, temp->dados.temp.mes, temp->dados.temp.ano, temp->dados.temp.hora, temp->dados.temp.minuto, temp->dados.temp.radiacao_solar, temp->dados.temp.temperatura, temp->dados.temp.umidade_relativa);
+            return;
+        }
+        temp = temp->prox;
+    }
+
+    printf("Evento não encontrado.\n");
+}
+
+////função que remove evento do nó
+void remover_no(node** head, int dia, int mes, int ano, int hora, int minuto) {
+    node* temp = *head;
+    node* prev = NULL;
+
+    while (temp != NULL) {
+        if (temp->dados.temp.dia == dia && temp->dados.temp.mes == mes && temp->dados.temp.ano == ano && temp->dados.temp.hora == hora && temp->dados.temp.minuto == minuto) {
+            if (prev == NULL) {
+                *head = temp->prox;
+            } else {
+                prev->prox = temp->prox;
+            }
+            free(temp);
+            break;
+        }
+        prev = temp;
+        temp = temp->prox;
+    }
+}
+
+//função que imrprimi o intervalo desejado
+void imprimir_intervalo(node* head, int inicio, int fim) {
+    node* temp = head;
+    while (temp != NULL) {
+        if (temp->dados.temp.seq >= inicio && temp->dados.temp.seq <= fim) {
+            if (temp->tipo_sensor == 1) {
+                printf("%d %02d/%02d/%04d %02d:%02d %d %.2lf %.2lf\n", temp->dados.temp.seq, temp->dados.temp.dia, temp->dados.temp.mes, temp->dados.temp.ano, temp->dados.temp.hora, temp->dados.temp.minuto, temp->dados.temp.radiacao_solar, temp->dados.temp.temperatura, temp->dados.temp.umidade_relativa);
+            } else if (temp->tipo_sensor == 2) {
+                printf("%d %02d/%02d/%04d %02d:%02d %.2lf %.2lf %d\n", temp->dados.massa.seq, temp->dados.massa.dia, temp->dados.massa.mes, temp->dados.massa.ano, temp->dados.massa.hora, temp->dados.massa.minuto, temp->dados.massa.velocidade_media, temp->dados.massa.velocidade_instantanea, temp->dados.massa.direcao);
+            }
+        }
+        temp = temp->prox;
+    }
+}
+
+//função que remove o intervalo desejado
+void podar_intervalo(node** head, int x, int y) {
+    for (int i = x; i <= y; i++) {
+        node* temp = *head;
+        node* prev = NULL;
+        int remover = 0;
+
+        while (temp != NULL) {
+            if (temp->dados.temp.seq == x) {
+                if (prev == NULL) {
+                    *head = temp->prox;
+                } else {
+                    prev->prox = temp->prox;
+                }
+                node* to_remover = temp;
+                temp = temp->prox;
+                free(temp);
+                temp = temp->prox;
+                break;
+            }
+            prev = temp;
+            temp = temp->prox;
+        }
+        if(!remover){
+            i++;
+        }
+    }
+}
+
+//função essencial
+void liberar_lista(node* head) {
+    node* temp;
+
+    while (head != NULL) {
+        temp = head;
+        head = head->prox;
+        free(temp);
+    }
+}
