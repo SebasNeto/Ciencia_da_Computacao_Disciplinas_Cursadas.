@@ -1,29 +1,3 @@
-/*
-    Documentação do código:
-
-
-    Qual seria a lógica de implementação dessa atividade?
-    Em sala de aula os assuntos abordados consistiram em realizar comandos em uma lista encadeada como: remover, inserir, imprimir...
-    Dessa forma:
-    A maneira de pensar seria: criar uma lista encadeada de eventos, como explica na atividade, cada evento é representado por um nó contendo os dados do evento.
-    Uma maneira de trabalhar com a lista é por meio de função que irá ficar responsável pelos comandos: R,I,A,B,P e F.
-    como é um programa que exije muita atenção, consequentemente hÁVERA muitos erros. Utilize muitos printfs para entender e localizar o erro.
-
-    Obs: criar o nó da lista...
-
-    No caso do comando R, sem dúvidas será necessário percorrer a lsita para poder remover determinado evento. Nesse caso poderiamos fazer comparações de data e hora com aqueles dados que foram armazenados na lista e dessa forma remove-lós.
-
-    No caso do comando I, sem dúvidas devemos percorrer a lista para imprimir os dados que ocorrem no intervalo que deve ser especificado.
-
-    No caso do comando A, devemos novamente percorrer a lista para poder retornar o nó que será pedido.
-
-    No caso do comando B, a mesma lógica do comando anterior tendo em conta o formaro dia/mes/ano hora:min.
-
-    No caso do comando P, devemos percorrer a lista a fim de remover todos os nós do intervalo que será dado.
-
-    Os códigos que estão no gitHub serão fundamentais para ter uma noção do que fazer...
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
